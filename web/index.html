@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f3f6fa" />
+    <title>Agent Task Monitor</title>
+    <meta name="description" content="本地 Codex 项目与任务实时看板" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#projects">跳到项目列表</a>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Agent Task Monitor 首页">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>
+          <strong>Agent Task Monitor</strong>
+          <small>LOCAL COMMAND CENTER</small>
+        </span>
+      </a>
+      <div class="connection-group">
+        <span class="local-badge">仅本机</span>
+        <span id="connection" class="connection" role="status">
+          <span class="connection-dot" aria-hidden="true"></span>
+          <span id="connection-text">正在连接</span>
+        </span>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="true" aria-label="切换到夜间模式">
+          <span class="theme-symbol" aria-hidden="true"></span>
+          <span id="theme-label">日间模式</span>
+        </button>
+        <button id="refresh" class="quiet-button" type="button">立即刷新</button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">CODEX ACTIVITY</p>
+          <h1 id="page-title">项目状态总览</h1>
+          <p class="hero-copy">先处理异常，再查看正在推进的项目。</p>
+        </div>
+        <div class="source-health" aria-label="数据源状态">
+          <span id="source-dot" class="source-dot" aria-hidden="true"></span>
+          <div>
+            <strong id="source-label">正在读取本地状态</strong>
+            <span id="updated-at">等待首次同步</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="overview-strip" aria-label="状态摘要与分布">
+        <div class="metrics">
+          <article class="metric metric-working">
+            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h3l2-5 4 10 2-5h5" /></svg>
+            <div><strong id="metric-working">—</strong><span class="metric-label">工作中</span></div>
+          </article>
+          <article class="metric metric-attention">
+            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4Z" /><path d="M12 9v5m0 3v.1" /></svg>
+            <div><strong id="metric-attention">—</strong><span class="metric-label">需关注</span></div>
+          </article>
+          <article class="metric">
+            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3V7Z" /></svg>
+            <div><strong id="metric-projects">—</strong><span class="metric-label">项目</span></div>
+          </article>
+          <article class="metric">
+            <svg class="metric-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6h14M7 12h14M7 18h14M3 6h.1M3 12h.1M3 18h.1" /></svg>
+            <div><strong id="metric-threads">—</strong><span class="metric-label">任务</span></div>
+          </article>
+        </div>
+        <article class="distribution-card">
+          <div class="distribution-heading">
+            <div>
+              <strong>项目状态分布</strong>
+              <span><span id="metric-unmapped">—</span> 条任务待归类</span>
+            </div>
+            <span class="distribution-hint">点击色块筛选</span>
+          </div>
+          <div id="project-distribution" class="status-distribution" role="group" aria-label="项目状态分布"></div>
+          <div id="distribution-legend" class="distribution-legend" aria-hidden="true"></div>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <aside class="activity-panel" aria-labelledby="activity-title">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">FOCUS</p>
+              <h2 id="activity-title">关注与动态</h2>
+            </div>
+          </div>
+          <div id="attention-section">
+            <h3>需要关注</h3>
+            <div id="attention-list" class="activity-list"></div>
+          </div>
+          <div class="divider"></div>
+          <div id="recent-section">
+            <h3 id="recent-title">最近活动</h3>
+            <div id="recent-list" class="activity-list"></div>
+          </div>
+        </aside>
+
+        <div class="project-area">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">PROJECTS</p>
+              <h2>项目状态</h2>
+            </div>
+            <div class="heading-status">
+              <span id="preference-status" class="preference-status" role="status" aria-live="polite"></span>
+              <span id="visible-count" class="result-count">准备数据</span>
+            </div>
+          </div>
+
+          <div class="toolbar" aria-label="项目筛选">
+            <label class="search-box">
+              <span class="search-label">搜索</span>
+              <input id="search" type="search" autocomplete="off" placeholder="项目或任务名称" />
+            </label>
+            <div class="toolbar-controls">
+              <label class="sort-control">
+                <span>排序</span>
+                <select id="sort" aria-label="项目排序方式">
+                  <option value="priority">我的优先级</option>
+                  <option value="attention">状态优先</option>
+                  <option value="last_activity">最近活动</option>
+                  <option value="name">项目名称</option>
+                </select>
+              </label>
+              <div class="filter-group" role="group" aria-label="按状态筛选">
+                <button class="filter active" type="button" data-filter="all" aria-pressed="true">全部</button>
+                <button class="filter" type="button" data-filter="working" aria-pressed="false">工作中</button>
+                <button class="filter" type="button" data-filter="attention" aria-pressed="false">需关注</button>
+                <button class="filter" type="button" data-filter="completed" aria-pressed="false">已完成</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="error" class="error-panel" role="alert" hidden>
+            <strong>暂时无法读取 Codex 状态</strong>
+            <span id="error-message">请确认本地服务仍在运行，然后重试。</span>
+            <button id="retry" type="button">重新加载</button>
+          </div>
+
+          <div id="loading" class="loading-grid" aria-label="正在加载项目">
+            <div class="skeleton"></div><div class="skeleton"></div>
+            <div class="skeleton"></div><div class="skeleton"></div>
+          </div>
+          <div id="projects" class="project-grid" aria-live="polite"></div>
+          <div id="empty" class="empty-state" hidden>
+            <strong>没有符合条件的项目</strong>
+            <span>换一个筛选条件或搜索词试试。</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Codex 状态只读 · 仅项目优先级写入本机偏好</span>
+      <span>AgentTaskMonitor · Prototype</span>
+    </footer>
+  </body>
+</html>
